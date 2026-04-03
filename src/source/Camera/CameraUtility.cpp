@@ -27,6 +27,54 @@ extern float CameraDistance;
 extern float Camera3DFov;
 extern bool Camera3DRoll;
 
+namespace
+{
+    constexpr int kMaxUserCameraLevel = 8;
+    constexpr float kUserCameraDistanceBase = 1000.f;
+    constexpr float kUserCameraDistanceStep = 150.f;
+    constexpr float kUserCameraViewFarBase = 2000.f;
+    constexpr float kUserCameraViewFarStep = 300.f;
+
+    int ClampUserCameraLevel(int level)
+    {
+        if (level < 0)
+        {
+            return 0;
+        }
+
+        if (level > kMaxUserCameraLevel)
+        {
+            return kMaxUserCameraLevel;
+        }
+
+        return level;
+    }
+
+    float GetUserCameraDistanceTarget(int level)
+    {
+        return kUserCameraDistanceBase + (ClampUserCameraLevel(level) * kUserCameraDistanceStep);
+    }
+
+    float GetUserCameraViewFar(int level)
+    {
+        return kUserCameraViewFarBase + (ClampUserCameraLevel(level) * kUserCameraViewFarStep);
+    }
+}
+
+void ApplyUserCameraZoomLevel(int level, bool snapDistance)
+{
+    const short clampedCameraLevel = static_cast<short>(ClampUserCameraLevel(level));
+
+    g_shCameraLevel = clampedCameraLevel;
+    CameraDistanceTarget = GetUserCameraDistanceTarget(clampedCameraLevel);
+
+    if (snapDistance)
+    {
+        CameraDistance = CameraDistanceTarget;
+        CameraViewFar = GetUserCameraViewFar(clampedCameraLevel);
+    }
+}
+
 /**
  * @brief Calculates camera view distance based on scene and world settings.
  */
@@ -52,10 +100,22 @@ static float CalculateCameraViewFar(int sceneFlag)
         return 3700.0f;
     }
 
-    // Handle camera level based view distance
-    switch (g_shCameraLevel)
+    if (g_Direction.IsDirection() && !g_Direction.m_bDownHero)
     {
-    case 0:
+        switch (g_shCameraLevel)
+        {
+        case 0: return 2000.f;
+        case 1: return 2500.f;
+        case 2: return 2600.f;
+        case 3: return 2950.f;
+        case 4: return 3200.f;
+        default: return 4200.f;
+        }
+    }
+
+    // Handle camera level based view distance
+    if (g_shCameraLevel == 0)
+    {
         if (sceneFlag == LOG_IN_SCENE)
         {
             return CameraViewFar; // Use existing value
@@ -72,13 +132,9 @@ static float CalculateCameraViewFar(int sceneFlag)
         {
             return 2000.f;
         }
-    case 1: return 2500.f;
-    case 2: return 2600.f;
-    case 3: return 2950.f;
-    case 4:
-    case 5: return 3200.f;
-    default: return 2000.f;
     }
+
+    return GetUserCameraViewFar(g_shCameraLevel);
 }
 
 /**
@@ -147,7 +203,6 @@ static void CalculateCameraPosition(vec3_t outCameraPosition)
     {
         g_shCameraLevel = 5;
     }
-    else g_shCameraLevel = 0;
 
     if (CCameraMove::GetInstancePtr()->IsTourMode())
     {
@@ -259,15 +314,23 @@ static void UpdateCameraDistance()
         }
         else
         {
-            switch (g_shCameraLevel)
+            if (g_Direction.IsDirection() && !g_Direction.m_bDownHero)
             {
-            case 0: CameraDistanceTarget = 1000.f; break;
-            case 1: CameraDistanceTarget = 1100.f; break;
-            case 2: CameraDistanceTarget = 1200.f; break;
-            case 3: CameraDistanceTarget = 1300.f; break;
-            case 4: CameraDistanceTarget = 1400.f; break;
-            case 5: CameraDistanceTarget = g_Direction.m_fCameraViewFar; break;
+                switch (g_shCameraLevel)
+                {
+                case 0: CameraDistanceTarget = 1000.f; break;
+                case 1: CameraDistanceTarget = 1100.f; break;
+                case 2: CameraDistanceTarget = 1200.f; break;
+                case 3: CameraDistanceTarget = 1300.f; break;
+                case 4: CameraDistanceTarget = 1400.f; break;
+                default: CameraDistanceTarget = g_Direction.m_fCameraViewFar; break;
+                }
             }
+            else
+            {
+                CameraDistanceTarget = GetUserCameraDistanceTarget(g_shCameraLevel);
+            }
+
             CameraDistance += (CameraDistanceTarget - CameraDistance) / 3;
         }
     }

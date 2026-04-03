@@ -217,6 +217,11 @@ static void UpdateUIAndInput()
 
     if (ErrorMessage != MESSAGE_LOG_OUT)
         g_pUIManager->UpdateInput();
+
+    if (MouseWheel != 0
+        && !MouseOnWindow
+        && false == g_pNewUISystem->CheckMouseUse())
+        SetViewPortLevel(MouseWheel);
 }
 
 /**

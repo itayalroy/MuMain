@@ -25,7 +25,9 @@ public:
 
     // Graphics
     int GetColorDepth() const { return m_colorDepth; }
+    int GetCameraZoomLevel() const { return m_cameraZoomLevel; }
     void SetColorDepth(int depth);
+    void SetCameraZoomLevel(int level);
 
     // Audio
     bool GetSoundEnabled() const { return m_soundEnabled; }
@@ -86,6 +88,7 @@ private:
     int  m_volumeLevel;
 
     int m_renderTextType;
+    int m_cameraZoomLevel;
 
     bool m_rememberMe;
     std::wstring m_languageSelection;

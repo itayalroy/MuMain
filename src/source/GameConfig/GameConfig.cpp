@@ -49,6 +49,7 @@ void GameConfig::Load()
     m_volumeLevel  = ReadInt(CfgSectionAudio, CfgKeyVolumeLevel, CfgDefaultVolumeLevel);
 
     m_renderTextType = ReadInt(CfgSectionGraphics, CfgKeyRenderTextType, CfgDefaultRenderTextType);
+    SetCameraZoomLevel(ReadInt(CfgSectionGraphics, CfgKeyCameraZoomLevel, CfgDefaultCameraZoomLevel));
 
     m_rememberMe        = ReadBool(CfgSectionLogin, CfgKeyRememberMe, CfgDefaultRememberMe);
     m_languageSelection = ReadString(CfgSectionLogin, CfgKeyLanguage, CfgDefaultLanguage);
@@ -71,6 +72,7 @@ void GameConfig::Save()
 
     WriteInt(CfgSectionGraphics, CfgKeyColorDepth, m_colorDepth);
     WriteInt(CfgSectionGraphics, CfgKeyRenderTextType, m_renderTextType);
+    WriteInt(CfgSectionGraphics, CfgKeyCameraZoomLevel, m_cameraZoomLevel);
 
     WriteBool(CfgSectionAudio, CfgKeySoundEnabled, m_soundEnabled);
     WriteBool(CfgSectionAudio, CfgKeyMusicEnabled, m_musicEnabled);
@@ -124,6 +126,20 @@ void GameConfig::SetVolumeLevel(int level)
 void GameConfig::SetRenderTextType(int type)
 {
     m_renderTextType = type;
+}
+
+void GameConfig::SetCameraZoomLevel(int level)
+{
+    if (level < 0)
+    {
+        level = 0;
+    }
+    else if (level > 8)
+    {
+        level = 8;
+    }
+
+    m_cameraZoomLevel = level;
 }
 
 void GameConfig::SetRememberMe(bool remember)

@@ -28,6 +28,8 @@ struct CameraState
 // Global camera state instance (extern - defined in ZzzScene.cpp)
 extern CameraState g_CameraState;
 
+void ApplyUserCameraZoomLevel(int level, bool snapDistance = false);
+
 // Main camera controller
 // Returns true if camera is locked
 bool MoveMainCamera();

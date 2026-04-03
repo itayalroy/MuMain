@@ -47,6 +47,7 @@ bool& EnableMainRender = g_sceneInit.GetEnableMainRender();
 #include "../GlobalText.h"
 #include "../PersonalShopTitleImp.h"
 #include "../CComGem.h"
+#include "../GameConfig/GameConfig.h"
 #include "../UIMng.h"
 
 // External variable declarations (defined in ZzzScene.cpp or other files)
@@ -236,19 +237,29 @@ void SetEffectVolumeLevel(int level)
 
 void SetViewPortLevel(int Wheel)
 {
-    if ((HIBYTE(GetAsyncKeyState(VK_CONTROL)) == 128))
+    if (Wheel == 0)
     {
-        if (Wheel > 0)
-            g_shCameraLevel--;
-        else if (Wheel < 0)
-            g_shCameraLevel++;
+        return;
+    }
 
-        MouseWheel = 0;
+    const short previousCameraLevel = g_shCameraLevel;
 
-        if (g_shCameraLevel > 4)
-            g_shCameraLevel = 4;
-        if (g_shCameraLevel < 0)
-            g_shCameraLevel = 0;
+    if (Wheel > 0)
+        g_shCameraLevel--;
+    else if (Wheel < 0)
+        g_shCameraLevel++;
+
+    if (g_shCameraLevel > 8)
+        g_shCameraLevel = 8;
+    if (g_shCameraLevel < 0)
+        g_shCameraLevel = 0;
+
+    MouseWheel = 0;
+
+    if (g_shCameraLevel != previousCameraLevel)
+    {
+        GameConfig::GetInstance().SetCameraZoomLevel(g_shCameraLevel);
+        GameConfig::GetInstance().Save();
     }
 }
 

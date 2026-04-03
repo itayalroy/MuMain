@@ -15,6 +15,8 @@
 #include "ZzzEffect.h"
 #include "ZzzOpenglUtil.h"
 #include "ZzzOpenData.h"
+#include "Camera/CameraUtility.h"
+#include "GameConfig/GameConfig.h"
 #include "Scenes/SceneCore.h"
 
 #include "DSPlaySound.h"
@@ -788,7 +790,7 @@ void InitGame()
     g_wtMatchTimeLeft.m_Time = 0;
     g_iGoalEffect = 0;
 
-    g_shCameraLevel = 0;
+    ApplyUserCameraZoomLevel(GameConfig::GetInstance().GetCameraZoomLevel(), true);
 
     SelectedNpc = -1;
     SelectedOperate = -1;
@@ -999,6 +1001,7 @@ BOOL ReceiveJoinMapServer(std::span<const BYTE> ReceiveBuffer)
     SetCharacterClass(c);
 
     Hero = c;
+    ApplyUserCameraZoomLevel(GameConfig::GetInstance().GetCameraZoomLevel(), true);
 
     memset(c->ID, 0, sizeof c->ID);
     wcscpy(c->ID, CharacterAttribute->Name);
@@ -2106,6 +2109,7 @@ BOOL ReceiveTeleport(const BYTE* ReceiveBuffer, BOOL bEncrypted)
 
         g_dwLatestZoneMoving = GetTickCount();
         g_bWhileMovingZone = FALSE;
+        ApplyUserCameraZoomLevel(GameConfig::GetInstance().GetCameraZoomLevel(), true);
 
         LoadingWorld = 30;
 

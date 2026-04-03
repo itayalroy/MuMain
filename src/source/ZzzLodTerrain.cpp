@@ -2041,13 +2041,19 @@ void CreateFrustrum2D(vec3_t Position)
     else
     {
         static  int CameraLevel;
+        constexpr int kMaxUserCameraLevel = 8;
+        constexpr float kUserFrustumFarBase = 2400.f;
+        constexpr float kUserFrustumFarStep = 300.f;
+        constexpr float kUserWidthFarBase = 1190.f;
+        constexpr float kUserWidthFarStep = 140.f;
+        constexpr float kUserWidthNearBase = 540.f;
+        constexpr float kUserWidthNearStep = 20.f;
 
         if ((int)CameraDistanceTarget >= (int)CameraDistance)
             CameraLevel = g_shCameraLevel;
 
-        switch (CameraLevel)
+        if (CameraLevel <= 0)
         {
-        case 0:
             if (SceneFlag == LOG_IN_SCENE)
             {
             }
@@ -2096,47 +2102,16 @@ void CreateFrustrum2D(vec3_t Position)
                 WidthFar = 1190.f * Width * sqrtf(CameraFOV / 33.f); // 1140.f
                 WidthNear = 540.f * Width * sqrtf(CameraFOV / 33.f); // 540.f
             }
-            break;
-        case 1:
+        }
+        else
+        {
+            const int userCameraLevel = CameraLevel > kMaxUserCameraLevel ? kMaxUserCameraLevel : CameraLevel;
             Width = (float)GetScreenWidth() / 500.f + 0.1f;// * 0.1f;
-            CameraViewFar = 2700.f;// * 0.1f;
+            CameraViewFar = kUserFrustumFarBase + (kUserFrustumFarStep * userCameraLevel);// * 0.1f;
             CameraViewNear = CameraViewFar * 0.19f;//0.22
             CameraViewTarget = CameraViewFar * 0.47f;//0.47
-            WidthFar = 1200.f * Width; // 1140.f
-            WidthNear = 540.f * Width; // 540.f
-            break;
-        case 2:
-            Width = (float)GetScreenWidth() / 500.f + 0.1f;// * 0.1f;
-            CameraViewFar = 3000.f;// * 0.1f;
-            CameraViewNear = CameraViewFar * 0.19f;//0.22
-            CameraViewTarget = CameraViewFar * 0.47f;//0.47
-            WidthFar = 1300.f * Width; // 1140.f
-            WidthNear = 540.f * Width; // 540.f
-            break;
-        case 3:
-            Width = (float)GetScreenWidth() / 500.f + 0.1f;// * 0.1f;
-            CameraViewFar = 3300.f;// * 0.1f;
-            CameraViewNear = CameraViewFar * 0.19f;//0.22
-            CameraViewTarget = CameraViewFar * 0.47f;//0.47
-            WidthFar = 1500.f * Width; // 1140.f
-            WidthNear = 580.f * Width; // 540.f
-            break;
-        case 4:
-            Width = (float)GetScreenWidth() / 500.f + 0.1f;// * 0.1f;
-            CameraViewFar = 5100.f;// * 0.1f;
-            CameraViewNear = CameraViewFar * 0.19f;//0.22
-            CameraViewTarget = CameraViewFar * 0.47f;//0.47
-            WidthFar = 2250.f * Width; // 1140.f
-            WidthNear = 540.f * Width; // 540.f
-            break;
-        case 5:
-            Width = (float)GetScreenWidth() / 500.f + 0.1f;// * 0.1f;
-            CameraViewFar = 3400.f;// * 0.1f;
-            CameraViewNear = CameraViewFar * 0.19f;//0.22
-            CameraViewTarget = CameraViewFar * 0.47f;//0.47
-            WidthFar = 1600.f * Width; // 1140.f
-            WidthNear = 660.f * Width; // 540.f
-            break;
+            WidthFar = (kUserWidthFarBase + (kUserWidthFarStep * userCameraLevel)) * Width; // 1140.f
+            WidthNear = (kUserWidthNearBase + (kUserWidthNearStep * userCameraLevel)) * Width; // 540.f
         }
     }
 
