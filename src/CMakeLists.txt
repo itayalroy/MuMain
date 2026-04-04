@@ -141,6 +141,16 @@ add_executable(Main ${MU_MAIN_SOURCES})
 # <-- Force C++20 for Main here
 target_compile_features(Main PUBLIC cxx_std_20)
 
+if (MSVC)
+  if (CMAKE_GENERATOR MATCHES "Visual Studio")
+    target_compile_options(Main PRIVATE /MP)
+  endif()
+
+  target_precompile_headers(Main PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/source/stdafx.h>"
+  )
+endif()
+
 if (NOT MSVC)
   set(MU_MAIN_MAP_FILE "${CMAKE_CURRENT_BINARY_DIR}/Main.map")
   target_link_options(Main PRIVATE "-Wl,-Map,${MU_MAIN_MAP_FILE}")
@@ -166,13 +176,23 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
   )
 
   # Copy assets directory next to executable (portable, IDE-agnostic solution)
+  set(COPY_ASSETS_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/CopyAssets.cmake")
+  file(WRITE "${COPY_ASSETS_SCRIPT}"
+    "if(NOT DEFINED TARGET_DIR)\n"
+    "  message(FATAL_ERROR \"TARGET_DIR not defined\")\n"
+    "endif()\n"
+    "if(NOT EXISTS \"\${TARGET_DIR}/Data\")\n"
+    "  file(COPY \"${ASSETS_DIR}/Data\" DESTINATION \"\${TARGET_DIR}\")\n"
+    "endif()\n"
+    "file(COPY \"${ASSETS_DIR}/Translations\" DESTINATION \"\${TARGET_DIR}\")\n"
+    "file(COPY \"${ASSETS_DIR}/config.ini\" DESTINATION \"\${TARGET_DIR}\")\n"
+  )
+
   add_custom_command(
     TARGET Main
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E echo "=== DEBUG: Copying assets from ${ASSETS_DIR} to $<TARGET_FILE_DIR:Main>"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${ASSETS_DIR}"
-            "$<TARGET_FILE_DIR:Main>"
+    COMMAND ${CMAKE_COMMAND} -E echo "=== DEBUG: Copying assets from ${ASSETS_DIR} to $<TARGET_FILE_DIR:Main> (Data only copied if missing)"
+    COMMAND ${CMAKE_COMMAND} -DTARGET_DIR="$<TARGET_FILE_DIR:Main>" -P "${COPY_ASSETS_SCRIPT}"
     COMMENT "Copying game assets to executable directory"
   )
 endif()
