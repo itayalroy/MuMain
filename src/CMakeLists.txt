@@ -227,6 +227,16 @@ add_executable(Main
 target_compile_features(Main PUBLIC cxx_std_20)
 target_link_libraries(Main PRIVATE MuClient::MuClient)
 
+if (MSVC)
+  if (CMAKE_GENERATOR MATCHES "Visual Studio")
+    target_compile_options(Main PRIVATE /MP)
+  endif()
+
+  target_precompile_headers(Main PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/source/stdafx.h>"
+  )
+endif()
+
 if (NOT MSVC)
   set(MU_MAIN_MAP_FILE "${CMAKE_CURRENT_BINARY_DIR}/Main.map")
   target_link_options(Main PRIVATE "-Wl,-Map,${MU_MAIN_MAP_FILE}")
