@@ -55,6 +55,26 @@ bool CInput::Create(HWND hWnd, long lScreenWidth, long lScreenHeight)
     return true;
 }
 
+void CInput::SetScreenSize(long lScreenWidth, long lScreenHeight)
+{
+    m_lScreenWidth = lScreenWidth;
+    m_lScreenHeight = lScreenHeight;
+
+    if (m_lScreenWidth <= 0)
+    {
+        m_lScreenWidth = 1;
+    }
+
+    if (m_lScreenHeight <= 0)
+    {
+        m_lScreenHeight = 1;
+    }
+
+    m_ptCursor.x = LIMIT(m_ptCursor.x, 0, m_lScreenWidth - 1);
+    m_ptCursor.y = LIMIT(m_ptCursor.y, 0, m_lScreenHeight - 1);
+    m_ptFormerCursor = m_ptCursor;
+}
+
 void CInput::Update()
 {
     m_lDX = m_lDY = 0L;

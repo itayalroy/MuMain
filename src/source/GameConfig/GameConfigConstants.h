@@ -15,6 +15,7 @@ namespace CfgKeys
     inline constexpr wchar_t CfgKeyWidth[]      = L"Width";
     inline constexpr wchar_t CfgKeyHeight[]     = L"Height";
     inline constexpr wchar_t CfgKeyWindowed[]   = L"Windowed";
+    inline constexpr wchar_t CfgKeyBorderless[] = L"Borderless";
 
     // Graphics
     inline constexpr wchar_t CfgKeyColorDepth[]     = L"ColorDepth";
@@ -41,6 +42,7 @@ namespace CfgDefaults
     inline constexpr int  CfgDefaultWindowWidth  = 1024;
     inline constexpr int  CfgDefaultWindowHeight = 768;
     inline constexpr bool CfgDefaultWindowed     = true;
+    inline constexpr bool CfgDefaultBorderless   = false;
 
     inline constexpr int  CfgDefaultColorDepth = 0;
 

@@ -114,6 +114,7 @@ namespace SEASON3B
 
         bool Update();
         bool Render();
+        void OnResolutionChanged();
 
         CNewUIManager* GetNewUIManager() const;
         CNewUI3DRenderMng* GetNewUI3DRenderMng() const;

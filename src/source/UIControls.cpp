@@ -13,6 +13,7 @@
 #include "ZzzCharacter.h"
 #include "ZzzInterface.h"
 #include "DSPlaySound.h"
+#include "Winmain.h"
 
 
 #include "ReadScript.h"
@@ -2608,7 +2609,7 @@ DWORD CUIRenderText::GetTextColor() const
 DWORD CUIRenderText::GetBgColor() const
 {
     if (m_pRenderText)
-        m_pRenderText->GetBgColor();
+        return m_pRenderText->GetBgColor();
     return 0;
 }
 
@@ -2636,7 +2637,9 @@ void CUIRenderText::SetBgColor(DWORD dwColor)
 void CUIRenderText::SetFont(HFONT hFont)
 {
     if (m_pRenderText)
-        m_pRenderText->SetFont(hFont);
+    {
+        m_pRenderText->SetFont(ResolveInterfaceFontHandle(hFont));
+    }
 }
 
 void CUIRenderText::RenderText(int iPos_x, int iPos_y, const wchar_t* pszText, int iBoxWidth /* = 0 */, int iBoxHeight /* = 0 */, int iSort /* = RT3_SORT_LEFT */, OUT SIZE* lpTextSize /* = NULL */)
@@ -3040,6 +3043,7 @@ CUITextInputBox::CUITextInputBox()
     m_hOldProc = nullptr;
     m_hMemDC = nullptr;
     m_hBitmap = nullptr;
+    m_hFont = nullptr;
     m_pFontBuffer = nullptr;
 
     m_dwTextColor = _ARGB(255, 255, 255, 255);
@@ -3277,6 +3281,39 @@ void CUITextInputBox::SetIMEPosition()
     ImmReleaseContext(m_hEditWnd, hIMC);
 }
 
+void CUITextInputBox::OnResolutionChanged()
+{
+    if (m_hEditWnd == nullptr)
+    {
+        return;
+    }
+
+    m_iRealWindowPos_x = static_cast<int>(m_iPos_x * g_fScreenRate_x) + WindowWidth;
+    m_iRealWindowPos_y = static_cast<int>(m_iPos_y * g_fScreenRate_y) + WindowHeight;
+
+    const int realWidth = static_cast<int>(m_iWidth * g_fScreenRate_x);
+    const int realHeight = static_cast<int>(m_iHeight * g_fScreenRate_y);
+
+    ::SetWindowPos(
+        m_hEditWnd,
+        nullptr,
+        m_iRealWindowPos_x,
+        m_iRealWindowPos_y,
+        realWidth,
+        realHeight,
+        SWP_NOZORDER | SWP_NOACTIVATE);
+
+    const int savedWidth = m_iWidth;
+    const int savedHeight = m_iHeight;
+
+    m_iWidth = 0;
+    m_iHeight = 0;
+    SetSize(savedWidth, savedHeight);
+
+    m_fCaretHeight = 0;
+    SyncCurrentFont();
+}
+
 void CUITextInputBox::GetText(wchar_t* pszText, int iGetLength)
 {
     if (pszText == nullptr) return;
@@ -3311,6 +3348,7 @@ void CUITextInputBox::SetSize(int iWidth, int iHeight)
 
     m_iWidth = iWidth;
     m_iHeight = iHeight;
+    m_fCaretHeight = 0;
 
     if (m_hMemDC != nullptr)
     {
@@ -3338,7 +3376,7 @@ void CUITextInputBox::SetSize(int iWidth, int iHeight)
     m_hBitmap = CreateDIBSection(hDC, DIB_INFO, DIB_RGB_COLORS, (void**)&m_pFontBuffer, nullptr, NULL);
     m_hMemDC = CreateCompatibleDC(hDC);
     SelectObject(m_hMemDC, m_hBitmap);
-    SetFont(g_hFont);
+    SetFont(m_hFont != nullptr ? m_hFont : g_hFont);
 
     delete[] DIB_INFO;
 
@@ -3416,6 +3454,7 @@ void CUITextInputBox::SetState(int iState)
         ShowWindow(m_hEditWnd, SW_HIDE);
     else
     {
+        SyncCurrentFont();
         ShowWindow(m_hEditWnd, SW_SHOW);
     }
 }
@@ -3423,6 +3462,8 @@ void CUITextInputBox::SetState(int iState)
 void CUITextInputBox::GiveFocus(BOOL SelectText)
 {
     if (m_hEditWnd == nullptr) return;
+
+    SyncCurrentFont();
 
     if (g_iChatInputType == 1 && GetFocus() == g_hWnd && !CheckOption(UIOPTION_SERIALNUMBER) && !CheckOption(UIOPTION_NUMBERONLY))
     {
@@ -3543,6 +3584,8 @@ void CUITextInputBox::Render()
     {
         return;
     }
+
+    SyncCurrentFont();
 
     if (m_bSetText)
     {
@@ -3687,13 +3730,54 @@ void CUITextInputBox::RenderScrollbar()
     }
 }
 
+HFONT CUITextInputBox::ResolveCurrentFontHandle()
+{
+    return ResolveAndUpdateInterfaceFontHandle(m_hFont, g_hFont);
+}
+
+void CUITextInputBox::SyncCurrentFont()
+{
+    const HFONT resolvedFont = ResolveCurrentFontHandle();
+    bool fontChanged = false;
+
+    if (m_hEditWnd != nullptr)
+    {
+        const HFONT currentEditFont = reinterpret_cast<HFONT>(SendMessageW(m_hEditWnd, WM_GETFONT, 0, 0));
+        if (currentEditFont != resolvedFont)
+        {
+            SendMessageW(m_hEditWnd, WM_SETFONT, reinterpret_cast<WPARAM>(resolvedFont), FALSE);
+            fontChanged = true;
+        }
+    }
+
+    if (m_hMemDC != nullptr)
+    {
+        const HFONT currentMemFont = reinterpret_cast<HFONT>(GetCurrentObject(m_hMemDC, OBJ_FONT));
+        if (currentMemFont != resolvedFont)
+        {
+            SelectObject(m_hMemDC, resolvedFont);
+            fontChanged = true;
+        }
+    }
+
+    if (fontChanged)
+    {
+        m_fCaretHeight = 0;
+    }
+}
+
 void CUITextInputBox::SetFont(HFONT hFont)
 {
-    if (m_hEditWnd == nullptr || hFont == nullptr)
-        return;
+    if (hFont != nullptr)
+    {
+        m_hFont = hFont;
+    }
+    else if (m_hFont == nullptr)
+    {
+        m_hFont = g_hFont;
+    }
 
-    SendMessageW(m_hEditWnd, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), FALSE);
-    SelectObject(m_hMemDC, hFont);
+    SyncCurrentFont();
 }
 
 BOOL CUITextInputBox::DoMouseAction()

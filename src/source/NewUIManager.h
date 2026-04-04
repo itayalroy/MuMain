@@ -56,6 +56,8 @@ namespace SEASON3B
         void ShowAllInterfaces(bool bShow = true);
         void EnableAllInterfaces(bool bEnable = true);
 
+        void NotifyResolutionChanged();
+
 #ifdef PBG_MOD_STAMINA_UI
         int GetShowUICnt();
 #endif //PBG_MOD_STAMINA_UI

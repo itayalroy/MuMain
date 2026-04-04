@@ -19,6 +19,8 @@ namespace SEASON3B
 
         virtual bool IsVisible() const = 0;
         virtual bool IsEnabled() const = 0;
+
+        virtual void OnResolutionChanged() {}
     };
 
     class CNewUIObj : public INewUIBase

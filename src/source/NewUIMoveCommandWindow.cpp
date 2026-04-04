@@ -18,6 +18,15 @@ using namespace SEASON3B;
 
 namespace
 {
+    struct MoveCommandLayout
+    {
+        int MapNameWidth;
+        int MapNameOffset;
+        int RequiredLevelOffset;
+        int RequiredZenOffset;
+        int EffectiveWindowWidth;
+    };
+
     const int MapNameCount = 6;
 
     const std::wstring MapName[MapNameCount] =
@@ -41,6 +50,51 @@ namespace
             }
         }
         return false;
+    }
+
+    MoveCommandLayout GetMoveCommandLayout(int windowWidth)
+    {
+        if (windowWidth <= 640)
+        {
+            return { 220, 62, 119, 159, 640 };
+        }
+
+        if (windowWidth <= 800)
+        {
+            return { 200, 69, 129, 174, 800 };
+        }
+
+        if (windowWidth <= 1024)
+        {
+            return { 180, 64, 119, 159, 1024 };
+        }
+
+        if (windowWidth <= 1280)
+        {
+            return { 160, 59, 104, 139, 1280 };
+        }
+
+        if (windowWidth <= 1366)
+        {
+            return { 150, 56, 101, 134, 1366 };
+        }
+
+        if (windowWidth <= 1440)
+        {
+            return { 140, 53, 97, 129, 1440 };
+        }
+
+        if (windowWidth <= 1600)
+        {
+            return { 120, 46, 86, 114, 1600 };
+        }
+
+        if (windowWidth <= 1680)
+        {
+            return { 115, 44, 83, 110, 1680 };
+        }
+
+        return { 110, 38, 70, 93, 1920 };
     }
 };
 
@@ -113,44 +167,16 @@ void SEASON3B::CNewUIMoveCommandWindow::SetPos(int x, int y)
     m_Pos.y = y;
 
     m_StrifePos.x = m_Pos.x + 20;
-    switch (WindowWidth)
-    {
-    case 640:
-        m_MapNameUISize.x = 220; m_MapNamePos.x = m_Pos.x + 62; m_ReqLevelPos.x = m_Pos.x + 119; m_ReqZenPos.x = m_Pos.x + 159;
-        break;
-    case 800:
-        m_MapNameUISize.x = 200; m_MapNamePos.x = m_Pos.x + 69; m_ReqLevelPos.x = m_Pos.x + 129; m_ReqZenPos.x = m_Pos.x + 174;
-        break;
-    case 1024:
-        m_MapNameUISize.x = 180; m_MapNamePos.x = m_Pos.x + 64; m_ReqLevelPos.x = m_Pos.x + 119; m_ReqZenPos.x = m_Pos.x + 159;
-        break;
-    case 1280:
-        m_MapNameUISize.x = 160; m_MapNamePos.x = m_Pos.x + 59; m_ReqLevelPos.x = m_Pos.x + 104; m_ReqZenPos.x = m_Pos.x + 139;
-        break;
-    case 1366:
-        m_MapNameUISize.x = 150; m_MapNamePos.x = m_Pos.x + 56; m_ReqLevelPos.x = m_Pos.x + 101; m_ReqZenPos.x = m_Pos.x + 134;
-        break;
-    case 1440:
-        m_MapNameUISize.x = 140; m_MapNamePos.x = m_Pos.x + 53; m_ReqLevelPos.x = m_Pos.x + 97; m_ReqZenPos.x = m_Pos.x + 129;
-        break;
-    case 1600:
-        m_MapNameUISize.x = 120; m_MapNamePos.x = m_Pos.x + 46; m_ReqLevelPos.x = m_Pos.x + 86; m_ReqZenPos.x = m_Pos.x + 114;
-        break;
-    case 1680:
-        m_MapNameUISize.x = 115; m_MapNamePos.x = m_Pos.x + 44; m_ReqLevelPos.x = m_Pos.x + 83; m_ReqZenPos.x = m_Pos.x + 110;
-        break;
-    case 1920:
-        m_MapNameUISize.x = 110; m_MapNamePos.x = m_Pos.x + 38; m_ReqLevelPos.x = m_Pos.x + 70; m_ReqZenPos.x = m_Pos.x + 93;
-        break;
-    default:
-        // handle unsupported resolutions here
-        break;
-    }
+    const MoveCommandLayout layout = GetMoveCommandLayout(WindowWidth);
+    m_MapNameUISize.x = layout.MapNameWidth;
+    m_MapNamePos.x = m_Pos.x + layout.MapNameOffset;
+    m_ReqLevelPos.x = m_Pos.x + layout.RequiredLevelOffset;
+    m_ReqZenPos.x = m_Pos.x + layout.RequiredZenOffset;
 
     m_MapNameUISize.x += 10;
 
     m_listMoveInfoData = CMoveCommandData::GetInstance()->GetMoveCommandDatalist();
-    m_iRealFontHeight = FontHeight * 640 / WindowWidth + 2;
+    m_iRealFontHeight = FontHeight * 640 / layout.EffectiveWindowWidth + 2;
 
     m_MapNameUISize.y = 60 + (m_iRealFontHeight * MOVECOMMAND_MAX_RENDER_TEXTLINE);
 

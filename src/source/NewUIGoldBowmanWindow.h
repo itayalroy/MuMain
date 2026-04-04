@@ -48,6 +48,7 @@ namespace SEASON3B
         void Release();
 
         void SetPos(int x, int y);
+        void OnResolutionChanged();
         const POINT& GetPos();
 
         bool UpdateMouseEvent();
@@ -74,6 +75,16 @@ namespace SEASON3B
         void CNewUIGoldBowmanWindow::SetPos(int x, int y)
     {
         m_Pos.x = x; m_Pos.y = y;
+    }
+
+    inline
+        void CNewUIGoldBowmanWindow::OnResolutionChanged()
+    {
+        if (m_EditBox != nullptr)
+        {
+            m_EditBox->SetPosition(m_Pos.x + 50, m_Pos.y + 260);
+            m_EditBox->OnResolutionChanged();
+        }
     }
 
     inline

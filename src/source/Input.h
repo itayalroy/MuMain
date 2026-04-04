@@ -52,6 +52,7 @@ public:
 
     static CInput& Instance();
     bool Create(HWND hWnd, long lScreenWidth, long lScreenHeight);
+    void SetScreenSize(long lScreenWidth, long lScreenHeight);
     void Update();
 
     bool IsKeyDown(int nVirtualKeyCode)

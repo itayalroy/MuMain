@@ -11,6 +11,37 @@
 
 using namespace SEASON3B;
 
+namespace
+{
+    struct ItemExplanationLayout
+    {
+        int InfoWidth;
+        int LabelHeight;
+        int DataHeight;
+        int EtcTabBase;
+    };
+
+    ItemExplanationLayout GetItemExplanationLayout(int windowWidth)
+    {
+        if (windowWidth <= 640)
+        {
+            return { 90, 38, 52, 5940 };
+        }
+
+        if (windowWidth <= 800)
+        {
+            return { 90, 33, 47, 5200 };
+        }
+
+        if (windowWidth <= 1024)
+        {
+            return { 103, 28, 40, 5200 };
+        }
+
+        return { 123, 22, 32, 5940 };
+    }
+}
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -95,33 +126,10 @@ bool SEASON3B::CNewUIItemExplanationWindow::Render()
     extern int TextNum;
     extern int g_iItemInfo[12][17];
 
-    int iInfoWidth = 0;
-    int iLabelHeight = 0;
-    int iDataHeight = 0;
-
-    switch (WindowWidth)
-    {
-    case 640:
-        iInfoWidth = 90;
-        iLabelHeight = 38;
-        iDataHeight = 52;
-        break;
-    case 800:
-        iInfoWidth = 90;
-        iLabelHeight = 33;
-        iDataHeight = 47;
-        break;
-    case 1024:
-        iInfoWidth = 103;
-        iLabelHeight = 28;
-        iDataHeight = 40;
-        break;
-    case 1280:
-        iInfoWidth = 123;
-        iLabelHeight = 22;
-        iDataHeight = 32;
-        break;
-    }
+    const ItemExplanationLayout layout = GetItemExplanationLayout(WindowWidth);
+    int iInfoWidth = layout.InfoWidth;
+    int iLabelHeight = layout.LabelHeight;
+    int iDataHeight = layout.DataHeight;
 
     int iType = 0;
     int TabSpace = 0;
@@ -155,10 +163,7 @@ bool SEASON3B::CNewUIItemExplanationWindow::Render()
     {
         iType = 5;
 
-        if (WindowWidth == 640 || WindowWidth == 1280)
-            TabSpace += int(5940 / iInfoWidth);
-        else if (WindowWidth == 800 || WindowWidth == 1024)
-            TabSpace += int(5200 / iInfoWidth);
+        TabSpace += int(layout.EtcTabBase / iInfoWidth);
     }
     else
     {

@@ -12,6 +12,24 @@ namespace
 {
     constexpr int kLayoutBaseX = 640;
     constexpr int kLayoutPanelWidth = 190;
+    constexpr int kChatLogBaseY = 480 - 50 - 47;
+    constexpr int kChatInputBaseY = 480 - 51 - 47;
+    constexpr int kOptionWindowX = (640 / 2) - (190 / 2);
+    constexpr int kOptionWindowY = 70;
+    constexpr int kCenterWindowX = (640 / 2) - (230 / 2);
+    constexpr int kKanturuWindowY = 20;
+    constexpr int kBattleInfoX = 509;
+    constexpr int kBattleInfoY = 359;
+    constexpr int kBottomRightInfoX = 640 - 127;
+    constexpr int kBottomRightInfoY = 480 - 132;
+    constexpr int kWindowMenuX = 640 - 112;
+    constexpr int kWindowMenuY = 480 - 171;
+    constexpr int kDuelWatchUserListX = 640 - 57;
+    constexpr int kDuelWatchUserListY = 480 - 51;
+    constexpr int kDoppelGangerFrameX = 640 - 227;
+    constexpr int kDoppelGangerFrameY = 480 - 51 - 87;
+    constexpr int kEmpireGuardianTimerX = 507;
+    constexpr int kEmpireGuardianTimerY = 342;
 
     constexpr int PanelColumnX(int columns)
     {
@@ -640,7 +658,6 @@ void CNewUISystem::Show(DWORD dwKey)
     {
         return;
     }
-
     /*
     std::list<INewUIBase*> visiblePages = {};
 
@@ -1132,6 +1149,102 @@ void CNewUISystem::Show(DWORD dwKey)
     m_pNewItemEnduranceInfo->SetPos(iScreenWidth);
     m_pNewBuffWindow->SetPos(iScreenWidth);
     m_pNewPartyListWindow->SetPos(iScreenWidth);
+}
+
+void CNewUISystem::OnResolutionChanged()
+{
+    if (!m_pNewUIMng) return;
+
+    const bool showChar  = IsVisible(INTERFACE_CHARACTER);
+    const bool showInvExt = IsVisible(INTERFACE_INVENTORY_EXT);
+    const bool showStorExt = IsVisible(INTERFACE_STORAGE_EXT);
+    const int screenWidth = GetScreenWidth();
+
+    // Chat & logs
+    if (m_pNewChatLogWindow)       { m_pNewChatLogWindow->SetPosition(0, kChatLogBaseY); m_pNewChatLogWindow->UpdateWndSize(); m_pNewChatLogWindow->UpdateScrollPos(); }
+    if (m_pNewSystemLogWindow)     m_pNewSystemLogWindow->SetPosition(0, 80);
+    if (m_pNewChatInputBox)        { m_pNewChatInputBox->SetWndPos(0, kChatInputBaseY); m_pNewChatInputBox->SetFont(g_hFont); m_pNewChatInputBox->OnResolutionChanged(); }
+
+    // Options
+    if (m_pNewOptionWindow)        { m_pNewOptionWindow->SetPos(kOptionWindowX, kOptionWindowY); m_pNewOptionWindow->RebuildResolutionList(); }
+    if (m_pNewWindowMenu && IsVisible(INTERFACE_WINDOW_MENU)) m_pNewWindowMenu->SetPos(kWindowMenuX, kWindowMenuY);
+
+    // Right-side HUD
+    if (m_pNewItemEnduranceInfo)   m_pNewItemEnduranceInfo->SetPos(screenWidth);
+    if (m_pNewBuffWindow)          m_pNewBuffWindow->SetPos(screenWidth);
+    if (m_pNewPartyListWindow)     m_pNewPartyListWindow->SetPos(screenWidth);
+
+    // Inventory panels (column 1-3, depends on character/shop/storage visibility)
+    if (IsVisible(INTERFACE_INVENTORY) && m_pNewMyInventory)           m_pNewMyInventory->SetPos(showChar ? PanelColumnX(2) : PanelColumnX(1), 0);
+    if (showInvExt && m_pNewMyInventoryExt)                            m_pNewMyInventoryExt->SetPos(PanelColumnX(2), 0);
+    if (showChar && m_pNewCharacterInfoWindow)                         m_pNewCharacterInfoWindow->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_PET) && m_pNewPetInfoWindow)               m_pNewPetInfoWindow->SetPos(PanelColumnX(2), 0);
+    if (IsVisible(INTERFACE_MYQUEST) && m_pNewMyQuestInfoWindow)       m_pNewMyQuestInfoWindow->SetPos(showChar ? PanelColumnX(2) : PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_NPCSHOP) && m_pNewNPCShop)                 m_pNewNPCShop->SetPos(showInvExt ? PanelColumnX(3) : PanelColumnX(2), 0);
+    if (IsVisible(INTERFACE_STORAGE) && m_pNewStorageInventory)        { const int sx = showStorExt ? PanelColumnX(2) : (showInvExt ? PanelColumnX(3) : PanelColumnX(2)); m_pNewStorageInventory->SetPos(sx, 0); }
+    if (showStorExt && m_pNewStorageInventoryExt)                      m_pNewStorageInventoryExt->SetPos(PanelColumnX(3), 0);
+    if (IsVisible(INTERFACE_MIXINVENTORY) && m_pNewMixInventory)       m_pNewMixInventory->SetPos(showInvExt ? PanelColumnX(3) : PanelColumnX(2), 0);
+    if (IsVisible(INTERFACE_TRADE) && m_pNewTrade)                     m_pNewTrade->SetPos(showInvExt ? PanelColumnX(3) : PanelColumnX(2), 0);
+    if (IsVisible(INTERFACE_MYSHOP_INVENTORY) && m_pNewMyShopInventory) m_pNewMyShopInventory->SetPos(showInvExt ? PanelColumnX(3) : PanelColumnX(2), 0);
+    if (m_pNewMyShopInventory)                                         m_pNewMyShopInventory->OnResolutionChanged();  // EditBox DIB refresh even when hidden
+    if (IsVisible(INTERFACE_PURCHASESHOP_INVENTORY) && m_pNewPurchaseShopInventory) m_pNewPurchaseShopInventory->SetPos(PanelColumnX(2), 0);
+
+    // NPC dialogs (all column 1)
+    if (IsVisible(INTERFACE_NPCQUEST) && m_pNewNPCQuest)               m_pNewNPCQuest->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_PARTY) && m_pNewPartyInfoWindow)           m_pNewPartyInfoWindow->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_BLOODCASTLE) && m_pNewEnterBloodCastle)    m_pNewEnterBloodCastle->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_DEVILSQUARE) && m_pNewEnterDevilSquare)    m_pNewEnterDevilSquare->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_CATAPULT) && m_pNewCatapultWindow)         m_pNewCatapultWindow->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_COMMAND) && m_pNewCommandWindow)           m_pNewCommandWindow->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_GUILDINFO) && m_pNewGuildInfoWindow)       m_pNewGuildInfoWindow->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_SENATUS) && m_pNewCastleWindow)            m_pNewCastleWindow->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_GUARDSMAN) && m_pNewGuardWindow)           m_pNewGuardWindow->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_GATEKEEPER) && m_pNewGatemanWindow)        m_pNewGatemanWindow->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_GATESWITCH) && m_pNewGateSwitchWindow)     m_pNewGateSwitchWindow->SetPos(PanelColumnX(1), 0);
+    if (m_pNewGuildMakeWindow)                                         m_pNewGuildMakeWindow->OnResolutionChanged();  // EditBox DIB refresh even when hidden
+    if (IsVisible(INTERFACE_GOLD_BOWMAN_LENA) && m_pNewGoldBowmanLena) m_pNewGoldBowmanLena->SetPos(PanelColumnX(1), 0);
+    if (m_pNewGoldBowman)                                              m_pNewGoldBowman->OnResolutionChanged();  // EditBox DIB refresh even when hidden
+    if (IsVisible(INTERFACE_LUCKYCOIN_REGISTRATION) && m_pNewLuckyCoinRegistration) m_pNewLuckyCoinRegistration->SetPos(PanelColumnX(2), 0);
+    if (IsVisible(INTERFACE_EXCHANGE_LUCKYCOIN) && m_pNewExchangeLuckyCoinWindow)   m_pNewExchangeLuckyCoinWindow->SetPos(PanelColumnX(2), 0);
+    if (IsVisible(INTERFACE_DOPPELGANGER_NPC) && m_pNewDoppelGangerWindow) m_pNewDoppelGangerWindow->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_NPC_DIALOGUE) && m_pNewNPCDialogue)        m_pNewNPCDialogue->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_QUEST_PROGRESS) && m_pNewQuestProgress)    m_pNewQuestProgress->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_QUEST_PROGRESS_ETC) && m_pNewQuestProgressByEtc) m_pNewQuestProgressByEtc->SetPos(showChar ? PanelColumnX(2) : PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_EMPIREGUARDIAN_NPC) && m_pNewEmpireGuardianNPC) m_pNewEmpireGuardianNPC->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_UNITEDMARKETPLACE_NPC_JULIA) && m_pNewUnitedMarketPlaceWindow) m_pNewUnitedMarketPlaceWindow->SetPos(PanelColumnX(1), 0);
+
+    // Timers & indicators (fixed screen positions)
+    if (IsVisible(INTERFACE_HERO_POSITION_INFO) && m_pNewHeroPositionInfo) m_pNewHeroPositionInfo->SetPos(0, 0);
+    if (IsVisible(INTERFACE_CHAOSCASTLE_TIME) && m_pNewChaosCastleTime)    m_pNewChaosCastleTime->SetPos(kBottomRightInfoX, kBottomRightInfoY);
+    if (IsVisible(INTERFACE_BLOODCASTLE_TIME) && m_pNewBloodCastle)        m_pNewBloodCastle->SetPos(kBottomRightInfoX, kBottomRightInfoY);
+    if (IsVisible(INTERFACE_EMPIREGUARDIAN_TIMER) && m_pNewEmpireGuardianTimer) m_pNewEmpireGuardianTimer->SetPos(kEmpireGuardianTimerX, kEmpireGuardianTimerY);
+    if (IsVisible(INTERFACE_DOPPELGANGER_FRAME) && m_pNewDoppelGangerFrame)   m_pNewDoppelGangerFrame->SetPos(kDoppelGangerFrameX, kDoppelGangerFrameY);
+
+    // Info windows (origin-aligned)
+    if (IsVisible(INTERFACE_HELP) && m_pNewHelpWindow)                 m_pNewHelpWindow->SetPos(0, 0);
+    if (IsVisible(INTERFACE_ITEM_EXPLANATION) && m_pNewItemExplanationWindow) m_pNewItemExplanationWindow->SetPos(0, 0);
+    if (IsVisible(INTERFACE_SETITEM_EXPLANATION) && m_pNewSetItemExplanation)   m_pNewSetItemExplanation->SetPos(0, 0);
+    if (IsVisible(INTERFACE_QUICK_COMMAND) && m_pNewQuickCommandWindow) m_pNewQuickCommandWindow->SetPos(0, 0);
+    if (IsVisible(INTERFACE_MOVEMAP) && m_pNewMoveCommandWindow)        m_pNewMoveCommandWindow->SetPos(1, 1);
+    if (IsVisible(INTERFACE_SIEGEWARFARE) && m_pNewSiegeWarfare)        m_pNewSiegeWarfare->SetPos(486, 234);
+    if (IsVisible(INTERFACE_CRYWOLF) && m_pNewCryWolfInterface)         m_pNewCryWolfInterface->SetPos(0, 0);
+    if (IsVisible(INTERFACE_DUELWATCH) && m_pNewDuelWatchWindow)        m_pNewDuelWatchWindow->SetPos(PanelColumnX(1), 0);
+    if (IsVisible(INTERFACE_DUELWATCH_USERLIST) && m_pNewDuelWatchUserListWindow) m_pNewDuelWatchUserListWindow->SetPos(kDuelWatchUserListX, kDuelWatchUserListY);
+    if (IsVisible(INTERFACE_MINI_MAP) && m_pNewMiniMap)                 m_pNewMiniMap->SetPos(0, 0);
+    if (IsVisible(INTERFACE_GENSRANKING) && m_pNewGensRanking)          m_pNewGensRanking->SetPos(PanelColumnX(1), 0);
+
+    // Kanturu & Cursed Temple
+    if (IsVisible(INTERFACE_KANTURU2ND_ENTERNPC) && m_pNewKanturu2ndEnterNpc)  m_pNewKanturu2ndEnterNpc->SetPos(kCenterWindowX, kKanturuWindowY);
+    if (IsVisible(INTERFACE_CURSEDTEMPLE_NPC) && m_pNewCursedTempleEnterWindow) m_pNewCursedTempleEnterWindow->SetPos(kCenterWindowX, 80);
+    if (IsVisible(INTERFACE_CURSEDTEMPLE_GAMESYSTEM) && m_pNewCursedTempleWindow) m_pNewCursedTempleWindow->SetPos(0, 0);
+    if (IsVisible(INTERFACE_CURSEDTEMPLE_RESULT) && m_pNewCursedTempleResultWindow) m_pNewCursedTempleResultWindow->SetPos(kCenterWindowX, 120);
+
+    // Battle info
+    if (IsVisible(INTERFACE_BATTLE_SOCCER_SCORE) && m_pNewBattleSoccerScore) m_pNewBattleSoccerScore->SetPos(kBattleInfoX, kBattleInfoY);
+    if (IsVisible(INTERFACE_DUEL_WINDOW) && m_pNewDuelWindow)            m_pNewDuelWindow->SetPos(kBattleInfoX, kBattleInfoY);
+    if (IsVisible(INTERFACE_KANTURU_INFO) && m_pNewKanturuInfoWindow)    m_pNewKanturuInfoWindow->SetPos(541, 351);
+
+    SyncHeroPositionInfoVisibility();
 }
 
 void CNewUISystem::Hide(DWORD dwKey)

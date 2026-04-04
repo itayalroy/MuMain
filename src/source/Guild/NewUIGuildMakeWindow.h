@@ -97,6 +97,7 @@ namespace SEASON3B
 
     public:
         void SetPos(int x, int y);
+        void OnResolutionChanged();
         const POINT& GetPos();
         float GetLayerDepth();	//. 4.4f
 
@@ -119,6 +120,16 @@ namespace SEASON3B
         void CNewUIGuildMakeWindow::SetPos(int x, int y)
     {
         m_Pos.x = x; m_Pos.y = y;
+    }
+
+    inline
+        void CNewUIGuildMakeWindow::OnResolutionChanged()
+    {
+        if (m_EditBox != nullptr)
+        {
+            m_EditBox->SetPosition(m_Pos.x + 50, m_Pos.y + 66);
+            m_EditBox->OnResolutionChanged();
+        }
     }
 
     inline

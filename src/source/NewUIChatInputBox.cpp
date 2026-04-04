@@ -171,6 +171,19 @@ void SEASON3B::CNewUIChatInputBox::SetWndPos(int x, int y)
     }
 }
 
+void SEASON3B::CNewUIChatInputBox::OnResolutionChanged()
+{
+    if (m_pChatInputBox != nullptr)
+    {
+        m_pChatInputBox->OnResolutionChanged();
+    }
+
+    if (m_pWhsprIDInputBox != nullptr)
+    {
+        m_pWhsprIDInputBox->OnResolutionChanged();
+    }
+}
+
 void SEASON3B::CNewUIChatInputBox::SetInputMsgType(int iInputMsgType)
 {
     m_iInputMsgType = iInputMsgType;

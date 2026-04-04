@@ -7,6 +7,7 @@
 
 #include <dpapi.h>
 #include <clocale>
+#include <cmath>
 #include "GameConfig/GameConfig.h"
 #include "UIWindows.h"
 #include "UIManager.h"
@@ -52,6 +53,7 @@
 
 
 #include "NewUISystem.h"
+#include "RuntimeResolution.h"
 #include "Translation/i18n.h"
 
 #ifdef _EDITOR
@@ -63,6 +65,11 @@
 // Forward declare ImGui WndProc handler
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif
+
+namespace
+{
+    void ReleaseRetiredFontHandles();
+}
 
 CUIMercenaryInputBox* g_pMercenaryInputBox = nullptr;
 CUITextInputBox* g_pSingleTextInputBox = nullptr;
@@ -109,6 +116,8 @@ int g_iScreenSaverOldValue = 60 * 15;
 
 BOOL g_bUseWindowMode = TRUE;
 BOOL g_bUseFullscreenMode = FALSE;
+BOOL g_bUseBorderlessMode = FALSE;
+extern EGameScene SceneFlag;
 
 char Mp3FileName[256];
 
@@ -423,6 +432,7 @@ void DestroyWindow()
     SAFE_DELETE(g_pMercenaryInputBox);
     SAFE_DELETE(g_pSingleTextInputBox);
     SAFE_DELETE(g_pSinglePasswdInputBox);
+    ReleaseRetiredFontHandles();
 
     SAFE_DELETE(g_pUIMapName);	// rozy
     SAFE_DELETE(g_pTimer);
@@ -562,7 +572,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         break;
     case WM_ERASEBKGND:
         return TRUE;
-        break;
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
@@ -738,6 +747,191 @@ int	g_iRenderTextType = 0;
 
 wchar_t g_aszMLSelection[MAX_LANGUAGE_NAME_LENGTH] = { '\0' };
 
+namespace
+{
+    struct FontReplacement { HFONT previous = nullptr; HFONT replacement = nullptr; };
+
+    std::vector<HFONT> g_RetiredFontHandles;
+    std::vector<FontReplacement> g_FontReplacements;
+
+    void RetireFontHandle(HFONT& fontHandle)
+    {
+        if (fontHandle)
+        {
+            g_RetiredFontHandles.push_back(fontHandle);
+            fontHandle = nullptr;
+        }
+    }
+
+    void ReleaseRetiredFontHandles()
+    {
+        for (auto h : g_RetiredFontHandles) DeleteObject(h);
+        g_RetiredFontHandles.clear();
+        g_FontReplacements.clear();
+    }
+
+    void RememberFontReplacement(HFONT previousHandle, HFONT replacementHandle)
+    {
+        if (previousHandle && replacementHandle && previousHandle != replacementHandle)
+        {
+            g_FontReplacements.push_back({ previousHandle, replacementHandle });
+        }
+    }
+
+    HFONT ResolveLatestFontHandle(HFONT fontHandle)
+    {
+        HFONT resolved = fontHandle ? fontHandle : g_hFont;
+        while (true)
+        {
+            bool found = false;
+            for (int i = static_cast<int>(g_FontReplacements.size()) - 1; i >= 0; --i)
+            {
+                if (g_FontReplacements[i].previous == resolved)
+                {
+                    resolved = g_FontReplacements[i].replacement;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) return resolved ? resolved : g_hFont;
+        }
+    }
+
+    void ReleaseOrRetireFontHandle(HFONT& fontHandle, bool keepAlive)
+    {
+        if (!fontHandle) return;
+        if (keepAlive) { RetireFontHandle(fontHandle); return; }
+        DeleteObject(fontHandle);
+        fontHandle = nullptr;
+    }
+
+    void RecreateInterfaceFonts(bool keepPreviousFontsAlive = false)
+    {
+        const HFONT previousFont = g_hFont;
+        const HFONT previousBoldFont = g_hFontBold;
+        const HFONT previousBigFont = g_hFontBig;
+        const HFONT previousFixedFont = g_hFixFont;
+
+        ReleaseOrRetireFontHandle(g_hFont, keepPreviousFontsAlive);
+        ReleaseOrRetireFontHandle(g_hFontBold, keepPreviousFontsAlive);
+        ReleaseOrRetireFontHandle(g_hFontBig, keepPreviousFontsAlive);
+        ReleaseOrRetireFontHandle(g_hFixFont, keepPreviousFontsAlive);
+
+        FontHeight = static_cast<int>(std::ceil(12 + ((WindowHeight - 480) / 200.f)));
+
+        const int fixFontHeight = WindowHeight <= 600 ? 14 : 15;
+        const int fontSize = FontHeight - 1;
+        const int fixFontSize = fixFontHeight - 1;
+
+        g_hFont = CreateFont(fontSize, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_NATURAL_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Tahoma");
+        g_hFontBold = CreateFont(fontSize, 0, 0, 0, FW_SEMIBOLD, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_NATURAL_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Tahoma");
+        g_hFontBig = CreateFont(fontSize * 2, 0, 0, 0, FW_SEMIBOLD, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_NATURAL_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Tahoma");
+        g_hFixFont = CreateFont(fixFontSize, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_NATURAL_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Tahoma");
+
+        if (keepPreviousFontsAlive)
+        {
+            RememberFontReplacement(previousFont, g_hFont);
+            RememberFontReplacement(previousBoldFont, g_hFontBold);
+            RememberFontReplacement(previousBigFont, g_hFontBig);
+            RememberFontReplacement(previousFixedFont, g_hFixFont);
+        }
+    }
+
+    bool RefreshTextResourcesForResolutionChange()
+    {
+        const int renderTextType = g_pRenderText->GetRenderTextType() >= 0
+            ? g_pRenderText->GetRenderTextType()
+            : g_iRenderTextType;
+        const DWORD textColor = g_pRenderText->GetTextColor();
+        const DWORD backgroundColor = g_pRenderText->GetBgColor();
+
+        RecreateInterfaceFonts(true);
+
+        g_pRenderText->Release();
+        if (!g_pRenderText->Create(renderTextType, g_hDC))
+        {
+            g_ErrorReport.Write(L"> Failed to recreate text rendering resources after applying the new resolution.\r\n");
+            return false;
+        }
+
+        g_pRenderText->SetFont(g_hFont);
+        g_pRenderText->SetTextColor(textColor);
+        g_pRenderText->SetBgColor(backgroundColor);
+
+        return true;
+    }
+
+    void RefreshUi3DCamerasForResolutionChange()
+    {
+        if (g_pNewUI3DRenderMng != nullptr)
+        {
+            g_pNewUI3DRenderMng->ResizeCameras(WindowWidth, WindowHeight);
+        }
+    }
+
+    void UpdateRuntimeResolutionMetrics(unsigned int width, unsigned int height)
+    {
+        WindowWidth = width > 0 ? width : 1u;
+        WindowHeight = height > 0 ? height : 1u;
+
+        g_fScreenRate_x = static_cast<float>(WindowWidth) / 640.f;
+        g_fScreenRate_y = static_cast<float>(WindowHeight) / 480.f;
+
+        CInput::Instance().SetScreenSize(static_cast<long>(WindowWidth), static_cast<long>(WindowHeight));
+
+        const int maxMouseX = static_cast<int>(WindowWidth) - 1;
+        const int maxMouseY = static_cast<int>(WindowHeight) - 1;
+
+        if (MouseX < 0)
+        {
+            MouseX = 0;
+        }
+        else if (MouseX > maxMouseX)
+        {
+            MouseX = maxMouseX;
+        }
+
+        if (MouseY < 0)
+        {
+            MouseY = 0;
+        }
+        else if (MouseY > maxMouseY)
+        {
+            MouseY = maxMouseY;
+        }
+
+        if (BackMouseX < 0)
+        {
+            BackMouseX = 0;
+        }
+        else if (BackMouseX > maxMouseX)
+        {
+            BackMouseX = maxMouseX;
+        }
+
+        if (BackMouseY < 0)
+        {
+            BackMouseY = 0;
+        }
+        else if (BackMouseY > maxMouseY)
+        {
+            BackMouseY = maxMouseY;
+        }
+    }
+
+}
+
+HFONT ResolveInterfaceFontHandle(HFONT fontHandle)
+{
+    return ResolveLatestFontHandle(fontHandle);
+}
+
+HFONT ResolveAndUpdateInterfaceFontHandle(HFONT& fontHandle, HFONT fallbackFont)
+{
+    fontHandle = ResolveLatestFontHandle(fontHandle != nullptr ? fontHandle : fallbackFont);
+    return fontHandle;
+}
+
 
 BOOL Util_CheckOption(std::wstring lpszCommandLine, wchar_t cOption, std::wstring& lpszString)
 {
@@ -892,6 +1086,37 @@ MSG MainLoop()
             }
         }
 
+        RuntimeResolutionApplyResult appliedResolution = {};
+        if (RuntimeResolution::ApplyQueuedChange(appliedResolution))
+        {
+            UpdateRuntimeResolutionMetrics(appliedResolution.Width, appliedResolution.Height);
+            RefreshUi3DCamerasForResolutionChange();
+            RefreshTextResourcesForResolutionChange();
+
+            if (g_pSingleTextInputBox != nullptr)
+            {
+                g_pSingleTextInputBox->OnResolutionChanged();
+            }
+
+            if (g_pSinglePasswdInputBox != nullptr)
+            {
+                g_pSinglePasswdInputBox->OnResolutionChanged();
+            }
+
+            if (g_pNewUISystem != nullptr)
+            {
+                g_pNewUISystem->OnResolutionChanged();
+            }
+
+            ::SetFocus(g_hWnd);
+            ::RedrawWindow(g_hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ALLCHILDREN);
+
+            if (g_pSystemLogBox != nullptr)
+            {
+                g_pSystemLogBox->AddText(L"Resolution applied.", SEASON3B::TYPE_SYSTEM_MESSAGE);
+            }
+        }
+
         if (CheckRenderNextFrame())
         {
             if (g_bUseWindowMode || g_bWndActive || g_HasInactiveFpsOverride)
@@ -943,6 +1168,8 @@ MSG MainLoop()
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nCmdShow)
 {
+    ::SetProcessDPIAware();
+
     wchar_t lpszExeVersion[256] = L"unknown";
 
     wchar_t* lpszCommandLine = GetCommandLine();
@@ -1014,6 +1241,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLin
     WindowHeight = GameConfig::GetInstance().GetWindowHeight();
     g_bUseWindowMode = GameConfig::GetInstance().GetWindowMode() ? TRUE : FALSE;
     g_bUseFullscreenMode = !g_bUseWindowMode;
+    g_bUseBorderlessMode = GameConfig::GetInstance().GetBorderlessMode() ? TRUE : FALSE;
 
     // Apply audio settings from INI
     m_SoundOnOff = GameConfig::GetInstance().GetSoundEnabled();
@@ -1088,14 +1316,14 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLin
     const wchar_t* windowName = L"MU Online";
     WNDCLASS wndClass;
 
-    wndClass.style = CS_HREDRAW | CS_VREDRAW;
+    wndClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wndClass.lpfnWndProc = WndProc;
     wndClass.cbClsExtra = 0;
     wndClass.cbWndExtra = 0;
     wndClass.hInstance = hInstance;
     wndClass.hIcon = LoadIcon(hInstance, (LPCTSTR)IDI_ICON1);
     wndClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wndClass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+    wndClass.hbrBackground = nullptr;
     wndClass.lpszMenuName = nullptr;
     wndClass.lpszClassName = windowName;
 
@@ -1107,16 +1335,35 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLin
 
     if (g_bUseWindowMode == TRUE)
     {
-        RECT rc = { 0, 0, WindowWidth, WindowHeight };
-        AdjustWindowRect(&rc, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_BORDER | WS_CLIPCHILDREN, NULL);
-        g_hWnd = CreateWindow(
-            windowName, windowName,
-            WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_BORDER | WS_CLIPCHILDREN,
-            (GetSystemMetrics(SM_CXSCREEN) - rc.right) / 2,
-            (GetSystemMetrics(SM_CYSCREEN) - rc.bottom) / 2,
-            rc.right - rc.left,
-            rc.bottom - rc.top,
-            nullptr, nullptr, hInstance, nullptr);
+        RuntimeWindowPlacement windowedPlacement = {};
+        if (!RuntimeResolution::TryBuildWindowedPlacement(
+            WindowWidth,
+            WindowHeight,
+            g_bUseBorderlessMode == TRUE,
+            windowedPlacement))
+        {
+            g_ErrorReport.Write(L"> Failed to compute the windowed placement for %ux%u. Falling back to the raw client size.\r\n", WindowWidth, WindowHeight);
+            windowedPlacement.Style = RuntimeResolution::GetWindowedWindowStyle(g_bUseBorderlessMode == TRUE);
+            windowedPlacement.ExStyle = RuntimeResolution::GetWindowedWindowExStyle(g_bUseBorderlessMode == TRUE);
+            windowedPlacement.WindowX = 0;
+            windowedPlacement.WindowY = 0;
+            windowedPlacement.WindowWidth = static_cast<int>(WindowWidth);
+            windowedPlacement.WindowHeight = static_cast<int>(WindowHeight);
+        }
+
+        g_hWnd = CreateWindowEx(
+            windowedPlacement.ExStyle,
+            windowName,
+            windowName,
+            windowedPlacement.Style,
+            windowedPlacement.WindowX,
+            windowedPlacement.WindowY,
+            windowedPlacement.WindowWidth,
+            windowedPlacement.WindowHeight,
+            nullptr,
+            nullptr,
+            hInstance,
+            nullptr);
     }
     else
     {
@@ -1239,19 +1486,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLin
         SetTargetFps(-1); // unlimited
     }
 
-    FontHeight = static_cast<int>(std::ceil(12 + ((WindowHeight - 480) / 200.f)));
-
-    int nFixFontHeight = WindowHeight <= 600 ? 14 : 15;
-    int nFixFontSize;
-    int iFontSize;
-
-    iFontSize = FontHeight - 1;
-    nFixFontSize = nFixFontHeight - 1;
-
-    g_hFont = CreateFont(iFontSize, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_NATURAL_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Tahoma");
-    g_hFontBold = CreateFont(iFontSize, 0, 0, 0, FW_SEMIBOLD, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_NATURAL_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Tahoma");
-    g_hFontBig = CreateFont(iFontSize * 2, 0, 0, 0, FW_SEMIBOLD, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_NATURAL_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Tahoma");
-    g_hFixFont = CreateFont(nFixFontSize, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_NATURAL_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Tahoma");
+    RecreateInterfaceFonts();
 
     setlocale(LC_ALL, "english");
 

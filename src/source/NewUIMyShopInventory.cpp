@@ -154,6 +154,15 @@ void SEASON3B::CNewUIMyShopInventory::SetPos(int x, int y)
     }
 }
 
+void SEASON3B::CNewUIMyShopInventory::OnResolutionChanged()
+{
+    if (m_EditBox != nullptr)
+    {
+        m_EditBox->SetPosition(m_Pos.x + 50, m_Pos.y + 55);
+        m_EditBox->OnResolutionChanged();
+    }
+}
+
 void SEASON3B::CNewUIMyShopInventory::GetTitle(wchar_t* titletext)
 {
      m_EditBox->GetText(titletext, iMAX_SHOPTITLE_MULTI);

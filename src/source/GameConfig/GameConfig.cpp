@@ -40,6 +40,7 @@ void GameConfig::Load()
     m_windowWidth  = ReadInt(CfgSectionWindow, CfgKeyWidth, CfgDefaultWindowWidth);
     m_windowHeight = ReadInt(CfgSectionWindow, CfgKeyHeight, CfgDefaultWindowHeight);
     m_windowMode   = ReadBool(CfgSectionWindow, CfgKeyWindowed, CfgDefaultWindowed);
+    m_borderlessMode = ReadBool(CfgSectionWindow, CfgKeyBorderless, CfgDefaultBorderless);
 
     m_colorDepth = ReadInt(CfgSectionGraphics, CfgKeyColorDepth, CfgDefaultColorDepth);
 
@@ -66,6 +67,7 @@ void GameConfig::Save()
     WriteInt(CfgSectionWindow, CfgKeyWidth, m_windowWidth);
     WriteInt(CfgSectionWindow, CfgKeyHeight, m_windowHeight);
     WriteBool(CfgSectionWindow, CfgKeyWindowed, m_windowMode);
+    WriteBool(CfgSectionWindow, CfgKeyBorderless, m_borderlessMode);
 
     WriteInt(CfgSectionGraphics, CfgKeyColorDepth, m_colorDepth);
     WriteInt(CfgSectionGraphics, CfgKeyRenderTextType, m_renderTextType);
@@ -92,6 +94,11 @@ void GameConfig::SetWindowSize(int width, int height)
 void GameConfig::SetWindowMode(bool windowed)
 {
     m_windowMode = windowed;
+}
+
+void GameConfig::SetBorderlessMode(bool borderless)
+{
+    m_borderlessMode = borderless;
 }
 
 void GameConfig::SetColorDepth(int depth)

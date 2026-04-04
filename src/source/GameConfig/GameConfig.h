@@ -17,9 +17,11 @@ public:
     int  GetWindowWidth()  const { return m_windowWidth; }
     int  GetWindowHeight() const { return m_windowHeight; }
     bool GetWindowMode()   const { return m_windowMode; }
+    bool GetBorderlessMode() const { return m_borderlessMode; }
 
     void SetWindowSize(int width, int height);
     void SetWindowMode(bool windowed);
+    void SetBorderlessMode(bool borderless);
 
     // Graphics
     int GetColorDepth() const { return m_colorDepth; }
@@ -75,6 +77,7 @@ private:
     int  m_windowWidth;
     int  m_windowHeight;
     bool m_windowMode;
+    bool m_borderlessMode;
 
     int m_colorDepth;
 

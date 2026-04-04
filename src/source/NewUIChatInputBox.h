@@ -145,6 +145,7 @@ namespace SEASON3B
         void Release();
 
         void SetWndPos(int x, int y);
+        void OnResolutionChanged();
 
         void SetFont(HFONT hFont);
 

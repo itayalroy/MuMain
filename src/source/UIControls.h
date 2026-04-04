@@ -867,6 +867,7 @@ public:
     BOOL IsPassword() { return m_bPasswordInput; }
 
     virtual void SetIMEPosition();
+    virtual void OnResolutionChanged();
 #ifdef PBG_ADD_INGAMESHOPMSGBOX
     bool GetUseScrollbar() { return m_bUseScrollbarRender; }
     void SetUseScrollbar(bool _scrollbar = TRUE) { m_bUseScrollbarRender = _scrollbar; }
@@ -875,6 +876,8 @@ public:
 protected:
     virtual BOOL DoMouseAction();
     void RenderScrollbar();
+    HFONT ResolveCurrentFontHandle();
+    void SyncCurrentFont();
 
     void WriteText(int iOffset, int iWidth, int iHeight);
     void UploadText(int sx, int sy, int Width, int Height);
@@ -888,6 +891,7 @@ protected:
     HWND m_hEditWnd;
     HDC m_hMemDC;
     HBITMAP m_hBitmap;
+    HFONT m_hFont;
     BYTE* m_pFontBuffer;
     bool m_bSetText = false;
     std::wstring m_sTextToSet;

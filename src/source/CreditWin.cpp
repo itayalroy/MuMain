@@ -127,12 +127,12 @@ void CCreditWin::Create()
 	CWin::RegisterButton(&m_btnClose);
 
 	int nFontSize = 10;
-	switch (rInput.GetScreenWidth())
-	{
-	case 800:	nFontSize = 14;	break;
-	case 1024:	nFontSize = 18;	break;
-	case 1280:	nFontSize = 24;	break;
-	}
+	if (rInput.GetScreenWidth() <= 800)
+		nFontSize = 14;
+	else if (rInput.GetScreenWidth() <= 1024)
+		nFontSize = 18;
+	else
+		nFontSize = 24;
 	HFONT fontHandle = CreateFont(nFontSize, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, NONANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, GlobalText[0][0] ? GlobalText[0] : NULL);
 	m_font.reset(fontHandle);
 

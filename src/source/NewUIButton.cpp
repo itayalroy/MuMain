@@ -7,6 +7,7 @@
 #include "NewUIButton.h"
 #include "UIControls.h"
 #include "GlobalBitmap.h"
+#include "Winmain.h"
 #include "ZzzTexture.h"
 
 //////////////////////////////////////////////////////////////////////
@@ -22,7 +23,7 @@ namespace
 
     void RenderText(const wchar_t* text, int x, int y, int sx, int sy, HFONT hFont, DWORD color, DWORD backcolor, int sort)
     {
-        g_pRenderText->SetFont(hFont);
+        g_pRenderText->SetFont(ResolveInterfaceFontHandle(hFont));
 
         DWORD backuptextcolor = g_pRenderText->GetTextColor();
         DWORD backuptextbackcolor = g_pRenderText->GetBgColor();
@@ -417,7 +418,8 @@ bool SEASON3B::CNewUIButton::Render(bool RendOption)
     if (m_Name.size() != 0)
     {
         SIZE Fontsize;
-        g_pRenderText->SetFont(m_hTextFont);
+        const HFONT textFont = ResolveAndUpdateInterfaceFontHandle(m_hTextFont, g_hFont);
+        g_pRenderText->SetFont(textFont);
         GetTextExtentPoint32(g_pRenderText->GetFontDC(), m_Name.c_str(), m_Name.size(), &Fontsize);
 
         Fontsize.cx = Fontsize.cx / ((float)WindowWidth / 640);
@@ -429,14 +431,14 @@ bool SEASON3B::CNewUIButton::Render(bool RendOption)
 #ifdef KJH_ADD_INGAMESHOP_UI_SYSTEM
         if ((m_bClickEffect == true) && (GetBTState() == BUTTON_STATE_DOWN))
         {
-            RenderText(m_Name.c_str(), x + m_iMoveTextPosX + 1, y + m_iMoveTextPosY + 1, m_Size.x, 0, m_hTextFont, m_NameColor, m_NameBackColor, RT3_SORT_LEFT);
+            RenderText(m_Name.c_str(), x + m_iMoveTextPosX + 1, y + m_iMoveTextPosY + 1, m_Size.x, 0, textFont, m_NameColor, m_NameBackColor, RT3_SORT_LEFT);
         }
         else
         {
-            RenderText(m_Name.c_str(), x + m_iMoveTextPosX, y + m_iMoveTextPosY, m_Size.x, 0, m_hTextFont, m_NameColor, m_NameBackColor, RT3_SORT_LEFT);
+            RenderText(m_Name.c_str(), x + m_iMoveTextPosX, y + m_iMoveTextPosY, m_Size.x, 0, textFont, m_NameColor, m_NameBackColor, RT3_SORT_LEFT);
         }
 #else // KJH_ADD_INGAMESHOP_UI_SYSTEM
-        RenderText(m_Name.c_str(), x, y, m_Size.x, 0, m_hTextFont, m_NameColor, m_NameBackColor, RT3_SORT_LEFT);
+        RenderText(m_Name.c_str(), x, y, m_Size.x, 0, textFont, m_NameColor, m_NameBackColor, RT3_SORT_LEFT);
 #endif // KJH_ADD_INGAMESHOP_UI_SYSTEM
     }
 
@@ -445,7 +447,8 @@ bool SEASON3B::CNewUIButton::Render(bool RendOption)
         if (CheckMouseIn(m_Pos.x, m_Pos.y, m_Size.x, m_Size.y))
         {
             SIZE Fontsize;
-            g_pRenderText->SetFont(m_hToolTipFont);
+            const HFONT tooltipFont = ResolveAndUpdateInterfaceFontHandle(m_hToolTipFont, g_hFont);
+            g_pRenderText->SetFont(tooltipFont);
             GetTextExtentPoint32(g_pRenderText->GetFontDC(), m_TooltipText.c_str(), m_TooltipText.size(), &Fontsize);
 
             Fontsize.cx = Fontsize.cx / ((float)WindowWidth / 640);
@@ -459,7 +462,7 @@ bool SEASON3B::CNewUIButton::Render(bool RendOption)
 
             if (m_IsTopPos) y = m_Pos.y - (Fontsize.cy + 2);
 
-            RenderText(m_TooltipText.c_str(), x + m_iMoveTextTipPosX, y + m_iMoveTextTipPosY, Fontsize.cx + 6, 0, m_hToolTipFont, m_TooltipTextColor, RGBA(0, 0, 0, 180), RT3_SORT_CENTER);
+            RenderText(m_TooltipText.c_str(), x + m_iMoveTextTipPosX, y + m_iMoveTextTipPosY, Fontsize.cx + 6, 0, tooltipFont, m_TooltipTextColor, RGBA(0, 0, 0, 180), RT3_SORT_CENTER);
             //RenderText( m_TooltipText.c_str(), x, y, Fontsize.cx+6, 0, m_hToolTipFont, m_TooltipTextColor, RGBA(0, 0, 0, 180), RT3_SORT_CENTER );
         }
     }
@@ -739,9 +742,10 @@ bool CNewUIRadioButton::Render()
     if (m_Name.size() != 0)
     {
         SIZE Fontsize;
+        const HFONT textFont = ResolveAndUpdateInterfaceFontHandle(m_hTextFont, g_hFont);
 
 #ifdef KJH_ADD_INGAMESHOP_UI_SYSTEM
-        g_pRenderText->SetFont(m_hTextFont);
+        g_pRenderText->SetFont(textFont);
 #else // KJH_ADD_INGAMESHOP_UI_SYSTEM
         g_pRenderText->SetFont(g_hFont);
 #endif // KJH_ADD_INGAMESHOP_UI_SYSTEM
@@ -757,11 +761,11 @@ bool CNewUIRadioButton::Render()
 #ifdef KJH_ADD_INGAMESHOP_UI_SYSTEM
         if ((m_bClickEffect == true) && GetBTState() == BUTTON_STATE_DOWN)
         {
-            RenderText(m_Name.c_str(), x + 1, y + 1, m_Size.x, 0, m_hTextFont, m_NameColor, m_NameBackColor, RT3_SORT_LEFT);
+            RenderText(m_Name.c_str(), x + 1, y + 1, m_Size.x, 0, textFont, m_NameColor, m_NameBackColor, RT3_SORT_LEFT);
         }
         else
         {
-            RenderText(m_Name.c_str(), x, y, m_Size.x, 0, m_hTextFont, m_NameColor, m_NameBackColor, RT3_SORT_LEFT);
+            RenderText(m_Name.c_str(), x, y, m_Size.x, 0, textFont, m_NameColor, m_NameBackColor, RT3_SORT_LEFT);
         }
 #else // KJH_ADD_INGAMESHOP_UI_SYSTEM
         RenderText(m_Name.c_str(), x, y, m_Size.x, 0, g_hFont, m_NameColor, m_NameBackColor, RT3_SORT_LEFT);
@@ -974,7 +978,7 @@ void CNewUIRadioGroupButton::ChangeFrame(int buttonIndex)
     }
 }
 
-// Ãß°¡ : Pruarin(07.09.03)
+// ï¿½ß°ï¿½ : Pruarin(07.09.03)
 void CNewUIRadioGroupButton::LockButtonindex(int buttonIndex)
 {
     int i = 0;
@@ -1187,7 +1191,7 @@ void SEASON3B::CNewUICheckBox::Render()
         RenderImage(s_ImgIndex, m_Pos.x, m_Pos.y, m_Size.x, m_Size.y, 0, m_Size.y);
     }
 
-    g_pRenderText->SetFont(m_hTextFont);
+    g_pRenderText->SetFont(ResolveAndUpdateInterfaceFontHandle(m_hTextFont, g_hFont));
     g_pRenderText->SetTextColor(m_NameColor);
     g_pRenderText->SetBgColor(m_NameBackColor);
     g_pRenderText->RenderText(m_Pos.x + m_Size.x + 1, m_Pos.y + 4, m_Name.c_str(), 0, 0);

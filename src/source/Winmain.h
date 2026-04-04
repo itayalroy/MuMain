@@ -80,6 +80,8 @@ extern double CPU_AVG;
 extern void SetMaxMessagePerCycle(int messages);
 extern void CheckHack(void);
 extern DWORD GetCheckSum(WORD wKey);
+extern HFONT ResolveInterfaceFontHandle(HFONT fontHandle);
+extern HFONT ResolveAndUpdateInterfaceFontHandle(HFONT& fontHandle, HFONT fallbackFont = nullptr);
 extern void StopMp3(const char* Name, BOOL bEnforce = false);
 extern void PlayMp3(const char* Name, BOOL bEnforce = false);
 extern bool IsEndMp3();
