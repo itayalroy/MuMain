@@ -39,3 +39,4 @@ build-mingw/
 **/imgui.ini
 
 **/*.log
+build-vs-x86/**
