@@ -923,9 +923,9 @@ int CreateAtlanseFish(OBJECT* o)
 
 void MoveBat(OBJECT* o)
 {
-    o->Position[2] = RequestTerrainHeight(o->Position[0], o->Position[1]);
-    o->Position[2] += ( - absf(sinf(o->Timer)) * 150.f + 350.f) * FPS_ANIMATION_FACTOR;
-    o->Timer += 0.2f * FPS_ANIMATION_FACTOR;
+    o->Position[2] = RequestTerrainHeight(o->Position[0], o->Position[1])
+        - absf(sinf(o->Timer)) * 40.f + 200.f;
+    o->Timer += 0.05f * FPS_ANIMATION_FACTOR;
 }
 
 void MoveButterFly(OBJECT* o)
@@ -947,7 +947,7 @@ void MoveButterFly(OBJECT* o)
         o->Direction[2] *= pow(0.8f, FPS_ANIMATION_FACTOR);
         o->Direction[2] -= 1.f * FPS_ANIMATION_FACTOR;
     }
-    o->Position[2] += (float)(rand() % 15 - 7) * 0.3f;
+    o->Position[2] += (float)(rand() % 4 - 2) * 0.3f * FPS_ANIMATION_FACTOR;
 }
 
 void MoveBird(OBJECT* o)
@@ -959,28 +959,25 @@ void MoveBird(OBJECT* o)
             vec3_t Range;
             VectorSubtract(o->Position, Hero->Object.Position, Range);
             float Distance = sqrtf(Range[0] * Range[0] + Range[1] * Range[1]);
-            if (Distance >= 200.f && Distance <= 400.f)
+            if (Distance >= 100.f && Distance <= 200.f)
             {
-                //int Index = TERRAIN_INDEX_REPEAT((int)(o->Position[0]/TERRAIN_SCALE),(int)(o->Position[1]/TERRAIN_SCALE));
-                //if(TerrainMappingLayer1[Index]==0)
                 o->AI = BOID_DOWN;
             }
         }
         o->Velocity = 1.f;
-        o->Position[2] += (float)(rand() % 16 - 8) * FPS_ANIMATION_FACTOR;
-        if (o->Position[2] < 200.f) o->Direction[2] = 10.f;
-        else if (o->Position[2] > 600.f) o->Direction[2] = -10.f;
+        o->Position[2] += (float)(rand() % 4 - 2) * FPS_ANIMATION_FACTOR;
+        if (o->Position[2] < 200.f) o->Direction[2] = 5.f;
+        else if (o->Position[2] > 600.f) o->Direction[2] = -5.f;
     }
     if (o->AI == BOID_DOWN)
     {
-        //o->Velocity *= pow(0.95f, FPS_ANIMATION_FACTOR);
-        o->Direction[2] = -20.f;
+        o->Direction[2] = -8.f;
         float Height = RequestTerrainHeight(o->Position[0], o->Position[1]);
         if (o->Position[2] < Height)
         {
             o->AI = BOID_UP;
             o->Velocity = 1.1f;
-            o->Direction[2] = 20.f;
+            o->Direction[2] = 8.f;
             o->CurrentAction = 0;
         }
     }
@@ -990,13 +987,13 @@ void MoveBird(OBJECT* o)
         {
             o->AI = BOID_UP;
             o->Velocity = 1.1f;
-            o->Direction[2] = 20.f;
+            o->Direction[2] = 8.f;
             o->CurrentAction = 0;
         }
     }
     if (o->AI == BOID_UP)
     {
-        o->Position[2] += (float)(rand() % 16 - 8) * FPS_ANIMATION_FACTOR;
+        o->Position[2] += (float)(rand() % 4 - 2) * FPS_ANIMATION_FACTOR;
         o->Velocity -= 0.005f * FPS_ANIMATION_FACTOR;
         if (o->Velocity <= 1.f)
         {
@@ -1096,16 +1093,16 @@ void MoveEagle(OBJECT* o)
             o->AI = BOID_FLY;
             o->HeadAngle[2] = 0;
 
-            o->HeadAngle[0] = cosf(fSeedAngle) * fFlyRange * FPS_ANIMATION_FACTOR;
-            o->HeadAngle[1] = sinf(fSeedAngle) * fFlyRange * FPS_ANIMATION_FACTOR;
+            o->HeadAngle[0] = cosf(fSeedAngle) * fFlyRange;
+            o->HeadAngle[1] = sinf(fSeedAngle) * fFlyRange;
             fAngle = CreateAngle(o->Position[0], o->Position[1], o->Position[0] + o->HeadAngle[0], o->Position[1] + o->HeadAngle[1]);
         }
     }
 
-    o->Position[0] += o->HeadAngle[0];
-    o->Position[1] += o->HeadAngle[1];
-    o->Position[2] += sinf(WorldTime * 0.0005f) * 1.0f;
-    o->Angle[1] += sinf(WorldTime * 0.001f) * 0.4f;
+    o->Position[0] += o->HeadAngle[0] * FPS_ANIMATION_FACTOR;
+    o->Position[1] += o->HeadAngle[1] * FPS_ANIMATION_FACTOR;
+    o->Position[2] += sinf(WorldTime * 0.0005f) * 1.0f * FPS_ANIMATION_FACTOR;
+    o->Angle[1] += sinf(WorldTime * 0.001f) * 0.4f * FPS_ANIMATION_FACTOR;
     o->Angle[2] = fAngle + 270;
 }
 
@@ -1165,7 +1162,7 @@ void MoveBoidGroup(OBJECT* o, int index)
         }
         else
         {
-            Vector(o->Velocity * 25.f, 0.f, o->Direction[2], Direction);
+            Vector(o->Velocity * 10.f, 0.f, o->Direction[2], Direction);
         }
         VectorRotate(Direction, o->Matrix, p);
         VectorAddScaled(o->Position, p, o->Position, FPS_ANIMATION_FACTOR);
@@ -1386,7 +1383,7 @@ void MoveBoids()
         if (o->Live)
         {
             BMD* b = &Models[o->Type];
-            float PlaySpeed = 1.f;
+            float PlaySpeed = 0.3f;
             if (o->Type == MODEL_DRAGON_ || o->Type == MODEL_BAHAMUT)
             {
                 PlaySpeed = 0.5f;
@@ -1402,8 +1399,7 @@ void MoveBoids()
                 Vector(o->Scale * 40.f, 0.f, 0.f, Position);
                 VectorRotate(Position, o->Matrix, Direction);
                 VectorAddScaled(o->Position, Direction, o->Position, FPS_ANIMATION_FACTOR);
-                o->Position[2] = RequestTerrainHeight(o->Position[0], o->Position[1]) + 300.f;
-                o->Position[2] += -absf(sinf(o->Timer)) * 100.f + 100.f;
+                o->Position[2] = RequestTerrainHeight(o->Position[0], o->Position[1]) + 300.f - absf(sinf(o->Timer)) * 100.f + 100.f;
                 o->Timer += o->Scale * 0.05f * FPS_ANIMATION_FACTOR;
                 o->LifeTime -= FPS_ANIMATION_FACTOR;
                 if (o->LifeTime <= 0)
