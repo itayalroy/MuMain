@@ -41,3 +41,4 @@ build-mingw/
 **/*.log
 # Local-only files
 docs/reviews/
+build-vs-x86/
