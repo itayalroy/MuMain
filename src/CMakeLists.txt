@@ -171,6 +171,16 @@ endif()
 add_library(MuClient STATIC ${MU_CLIENT_SOURCES})
 target_compile_features(MuClient PUBLIC cxx_std_20)
 
+if (MSVC)
+  if (CMAKE_GENERATOR MATCHES "Visual Studio")
+    target_compile_options(MuClient PRIVATE /MP)
+  endif()
+
+  target_precompile_headers(MuClient PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/source/App/stdafx.h>"
+  )
+endif()
+
 # The engine relies on self-registering globals whose constructors get
 # silently dropped if the linker only pulls archive members on demand, so
 # every consumer must link MuClient with WHOLE_ARCHIVE. Rather than make each
@@ -233,7 +243,7 @@ if (MSVC)
   endif()
 
   target_precompile_headers(Main PRIVATE
-    "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/source/stdafx.h>"
+    "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/source/App/stdafx.h>"
   )
 endif()
 
